@@ -1,5 +1,5 @@
 name: Front Door AI Sidecar
-version: "0.1.1"
+version: "0.1.2"
 slug: front_door_ai_sidecar
 description: Durable front-door hybrid AI sidecar for Home Assistant OS
 url: https://github.com/bensturgess-austin/homelab-control-plane-addons
@@ -46,6 +46,9 @@ options:
     - notify.mobile_app_alinas_iphone
     - notify.mobile_app_sophie_phone
   vision_notification_routing_mode: severity
+  vision_commissioning_notifications_enabled: false
+  vision_notify_known_residents: false
+  vision_notify_delivery_always: true
   vision_aws_region: ap-southeast-2
   aws_access_key_id: ""
   aws_secret_access_key: ""
@@ -85,6 +88,9 @@ schema:
   vision_notification_allowed_services:
     - str
   vision_notification_routing_mode: list(severity|same_for_all)
+  vision_commissioning_notifications_enabled: bool
+  vision_notify_known_residents: bool
+  vision_notify_delivery_always: bool
   vision_aws_region: str
   aws_access_key_id: password
   aws_secret_access_key: password

@@ -19,6 +19,12 @@ It subscribes to Frigate MQTT events, processes only configured cameras, publish
 4. Add OpenAI/AWS keys only when ready to switch to `vision_provider_mode: hybrid`.
 5. Enable notifications only after dry-run MQTT state is confirmed.
 
+## Commissioning Notifications
+
+Use `vision_commissioning_notifications_enabled: true` only while proving mobile notification delivery. Commissioning notifications are clearly labelled and should be turned off after a successful walk test.
+
+Leave `vision_notify_delivery_always: true` enabled for normal operation so delivery/package events can notify even when one provider returns a partial or skipped result. Leave `vision_notify_known_residents: false` unless resident walk-up notifications are explicitly desired.
+
 ## Cutover
 
 Run this add-on in parallel with the `newton` process first. Stop the `newton` background sidecar only after the add-on has processed a front-door event and Home Assistant mobile notification delivery is confirmed.
