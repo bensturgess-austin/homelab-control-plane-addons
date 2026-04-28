@@ -1,0 +1,99 @@
+name: Front Door AI Sidecar
+version: "0.1.1"
+slug: front_door_ai_sidecar
+description: Durable front-door hybrid AI sidecar for Home Assistant OS
+url: https://github.com/bensturgess-austin/homelab-control-plane-addons
+image: ghcr.io/bensturgess-austin/front-door-ai-sidecar
+arch:
+  - amd64
+startup: application
+boot: auto
+init: false
+homeassistant_api: true
+hassio_api: false
+map:
+  - type: share
+    read_only: true
+options:
+  vision_provider_mode: dry_run
+  vision_dry_run_enabled: true
+  vision_enabled_cameras:
+    - front_door
+  vision_daily_cloud_call_cap: 50
+  vision_openai_model: gpt-5.4-mini
+  vision_openai_image_detail: low
+  vision_openai_max_frames_per_event: 1
+  vision_openai_max_output_tokens: 200
+  vision_openai_timeout_seconds: 30
+  openai_api_key: ""
+  vision_frigate_base_url: http://192.168.0.55:5000
+  vision_mqtt_enabled: true
+  vision_mqtt_broker_host: 192.168.20.92
+  vision_mqtt_broker_port: 1883
+  vision_mqtt_username: ""
+  vision_mqtt_password: ""
+  vision_mqtt_base_topic: home/frigate_ai
+  vision_mqtt_subscribe_topics:
+    - frigate/reviews
+    - frigate/events
+  vision_notifications_enabled: false
+  vision_notification_services:
+    - notify.mobile_app_bens_iphone
+    - notify.mobile_app_alinas_iphone
+    - notify.mobile_app_sophie_phone
+  vision_notification_allowed_services:
+    - notify.mobile_app_bens_iphone
+    - notify.mobile_app_alinas_iphone
+    - notify.mobile_app_sophie_phone
+  vision_notification_routing_mode: severity
+  vision_aws_region: ap-southeast-2
+  aws_access_key_id: ""
+  aws_secret_access_key: ""
+  vision_aws_possible_match_threshold: 0.95
+  vision_aws_timeout_seconds: 10
+  vision_aws_max_reference_images_per_person: 2
+  vision_aws_max_comparisons_per_event: 12
+  vision_identity_enrollment_manifest_path: /share/front_door_ai/enrolled_household/manifest.json
+  vision_identity_required_zones:
+    - frontdoor_detector
+  vision_identity_roi_polygon: "-0.001,0.983,0.006,0.572,0.386,0.401,0.88,0.84,0.827,0.987"
+  vision_identity_min_roi_overlap: 0.30
+schema:
+  vision_provider_mode: list(dry_run|openai_summary|aws_identity_fallback|hybrid)
+  vision_dry_run_enabled: bool
+  vision_enabled_cameras:
+    - str
+  vision_daily_cloud_call_cap: int
+  vision_openai_model: str
+  vision_openai_image_detail: list(low|high|auto)
+  vision_openai_max_frames_per_event: int
+  vision_openai_max_output_tokens: int
+  vision_openai_timeout_seconds: int
+  openai_api_key: password
+  vision_frigate_base_url: str
+  vision_mqtt_enabled: bool
+  vision_mqtt_broker_host: str
+  vision_mqtt_broker_port: int
+  vision_mqtt_username: str
+  vision_mqtt_password: password
+  vision_mqtt_base_topic: str
+  vision_mqtt_subscribe_topics:
+    - str
+  vision_notifications_enabled: bool
+  vision_notification_services:
+    - str
+  vision_notification_allowed_services:
+    - str
+  vision_notification_routing_mode: list(severity|same_for_all)
+  vision_aws_region: str
+  aws_access_key_id: password
+  aws_secret_access_key: password
+  vision_aws_possible_match_threshold: float
+  vision_aws_timeout_seconds: int
+  vision_aws_max_reference_images_per_person: int
+  vision_aws_max_comparisons_per_event: int
+  vision_identity_enrollment_manifest_path: str
+  vision_identity_required_zones:
+    - str
+  vision_identity_roi_polygon: str
+  vision_identity_min_roi_overlap: float
