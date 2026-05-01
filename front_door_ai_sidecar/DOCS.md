@@ -25,6 +25,12 @@ Use `vision_commissioning_notifications_enabled: true` only while proving mobile
 
 Leave `vision_notify_delivery_always: true` enabled for normal operation so delivery/package events can notify even when one provider returns a partial or skipped result. Leave `vision_notify_known_residents: false` unless resident walk-up notifications are explicitly desired.
 
+## Local Frigate Signals
+
+Version `0.1.3` enriches front-door events from fresh Home Assistant state for local face recognition and person classification. The default freshness window is `vision_local_signal_freshness_seconds: 120`.
+
+Fresh `Resident`, `Visitor`, and `Delivery` classifications can help summary/notification routing when Frigate event zone fields are sparse. AWS identity fallback remains stricter and still requires the configured identity zone or ROI gate.
+
 ## Cutover
 
 Run this add-on in parallel with the `newton` process first. Stop the `newton` background sidecar only after the add-on has processed a front-door event and Home Assistant mobile notification delivery is confirmed.
