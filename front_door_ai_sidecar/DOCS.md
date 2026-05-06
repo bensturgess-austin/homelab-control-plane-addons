@@ -9,6 +9,7 @@ It subscribes to Frigate MQTT events, processes only configured cameras, publish
 - `/data/homelab-control-plane.toml`: generated runtime config
 - `/data/telemetry.sqlite3`: automation telemetry journal
 - `/data/vision_cloud_calls.jsonl`: local cloud-call ledger
+- `/data/household_event_intelligence.sqlite3`: structured event-memory store, without raw images or video
 - `/share/front_door_ai/enrolled_household/`: default read-only location for enrolled resident reference images and manifest
 
 ## First Start
@@ -30,6 +31,35 @@ Leave `vision_notify_delivery_always: true` enabled for normal operation so deli
 Version `0.1.3` enriches front-door events from fresh Home Assistant state for local face recognition and person classification. The default freshness window is `vision_local_signal_freshness_seconds: 120`.
 
 Fresh `Resident`, `Visitor`, and `Delivery` classifications can help summary/notification routing when Frigate event zone fields are sparse. AWS identity fallback remains stricter and still requires the configured identity zone or ROI gate.
+
+## Frame Resolution
+
+Version `0.1.4` resolves OpenAI images from Frigate tracked-object event ids rather than assuming every MQTT review id is directly fetchable as an event snapshot. Review messages use their detection/object ids where available; event messages can still use the event-shaped message id.
+
+Snapshot fetches retry short-lived `404`, `409`, timeout, and invalid-image responses using `vision_frame_snapshot_retry_attempts` and `vision_frame_snapshot_retry_backoff_seconds`. The add-on publishes frame-resolution diagnostics without image bytes.
+
+Manual read-only smoke test from the private repo:
+
+```powershell
+.\scripts\test_front_door_frame_resolution.ps1 -EventId "<frigate-event-id>"
+```
+
+## Household Event Intelligence
+
+Version `0.1.5` adds Household Event Intelligence: a durable semantic layer over processed Frigate events, local face/classification signals, OpenAI summaries, AWS identity fallback status, and notification outcomes. It stores structured event facts in SQLite under `/data`; it does not store raw video, image bytes, provider request bodies, or secrets.
+
+The add-on publishes retained MQTT/Home Assistant state for `last_12h_summary`, `today_delivery_status`, `unknown_visitor_count`, `last_unknown_event`, and `event_memory_status`.
+
+The default digest is deterministic and local. Optional Ollama narrative summaries are disabled by default with `event_intelligence_llm_enabled: false`; if enabled, only structured event facts are sent to Ollama.
+
+## Notification Detail View
+
+Version `0.1.6` keeps mobile notifications short and adds a Home Assistant deep link so tapping an alert opens the front-door AI dashboard. The defaults are:
+
+- `vision_notification_click_url: /front-door-ai`
+- `vision_notification_message_max_chars: 160`
+
+Use the dashboard and daily digest examples in the private repo under `configs/integrations/` as manual Home Assistant review/apply artifacts. Notifications remain informational only and include no action buttons.
 
 ## Cutover
 
