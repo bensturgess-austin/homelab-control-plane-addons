@@ -61,6 +61,14 @@ Version `0.1.6` keeps mobile notifications short and adds a Home Assistant deep 
 
 Use the dashboard and daily digest examples in the private repo under `configs/integrations/` as manual Home Assistant review/apply artifacts. Notifications remain informational only and include no action buttons.
 
+## Frigate Backfill And Snapshot Candidates
+
+Version `0.1.7` backfills the event-memory store from recent Frigate tracked-object events on add-on startup. The default backfill is memory-only for the last 12 hours: it updates dashboard digest entities, but it does not call OpenAI, AWS, or Home Assistant notification services for historical events.
+
+The sidecar treats Frigate review ids and tracked-object event ids separately. Review messages are metadata unless they include detection/object ids; snapshot frames are resolved from actual Frigate event ids such as `frigate://front_door/<event-id>/snapshot.jpg`.
+
+Frigate `box` values are normalized from `[x, y, width, height]` into the sidecar contract shape `[left, top, right, bottom]` before ROI gates run. The summary ROI remains less strict than the AWS identity ROI.
+
 ## Cutover
 
 Run this add-on in parallel with the `newton` process first. Stop the `newton` background sidecar only after the add-on has processed a front-door event and Home Assistant mobile notification delivery is confirmed.
