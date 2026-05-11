@@ -1,5 +1,5 @@
 name: Front Door AI Sidecar
-version: "0.1.7"
+version: "0.1.8"
 slug: front_door_ai_sidecar
 description: Durable front-door hybrid AI sidecar for Home Assistant OS
 url: https://github.com/bensturgess-austin/homelab-control-plane-addons
