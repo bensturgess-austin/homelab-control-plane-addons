@@ -71,7 +71,7 @@ Frigate `box` values are normalized from `[x, y, width, height]` into the sideca
 
 ## Notification Quality And Signal Hygiene
 
-Version `0.1.9` keeps phone notifications focused on useful household alerts. Expected provider diagnostics such as `aws:no_face`, location/ROI skips, frame-resolution skips, and local-only backfill are kept in dashboard/log diagnostics rather than rendered as `partial result` phone messages or routine digest provider failures.
+Version `0.1.10` keeps phone notifications focused on useful household alerts. Expected provider diagnostics such as `aws:no_face`, location/ROI skips, frame-resolution skips, and local-only backfill are kept in dashboard/log diagnostics rather than rendered as `partial result` phone messages or routine digest provider failures.
 
 Known resident walk-ups remain suppressed by default. Delivery alerts still route when there is stronger package/OpenAI evidence, but a local `Delivery` classification with a confident resident identity does not phone-alert by itself.
 
