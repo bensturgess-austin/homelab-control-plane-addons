@@ -75,6 +75,12 @@ Version `0.1.10` keeps phone notifications focused on useful household alerts. E
 
 Known resident walk-ups remain suppressed by default. Delivery alerts still route when there is stronger package/OpenAI evidence, but a local `Delivery` classification with a confident resident identity does not phone-alert by itself.
 
+## Event Finalization
+
+Version `0.1.11` buffers front-door MQTT event/review updates for `vision_event_finalization_delay_seconds` before analysis. The default delay is `10` seconds. This lets the sidecar merge Frigate tracked-object events and review updates into one finalized event, dedupe by tracked Frigate event id, and send at most one phone notification per physical front-door event.
+
+Known resident events are dashboard-only in normal operation. Use `vision_commissioning_notifications_enabled: true` only for deliberate walk tests. `vision_notify_known_residents` is retained for config compatibility, but normal live notifications suppress confident resident events until a better resident-alert use case is defined.
+
 ## Updating From Repo Changes
 
 Home Assistant reads this add-on from this public metadata repo, not from the private source repo. A new version is available to Home Assistant only after:

@@ -1,5 +1,5 @@
 name: Front Door AI Sidecar
-version: "0.1.10"
+version: "0.1.11"
 slug: front_door_ai_sidecar
 description: Durable front-door hybrid AI sidecar for Home Assistant OS
 url: https://github.com/bensturgess-austin/homelab-control-plane-addons
@@ -38,6 +38,9 @@ options:
   vision_mqtt_subscribe_topics:
     - frigate/reviews
     - frigate/events
+  vision_event_finalization_enabled: true
+  vision_event_finalization_delay_seconds: 10.0
+  vision_event_finalization_max_pending: 100
   vision_notifications_enabled: false
   vision_notification_services:
     - notify.mobile_app_bens_iphone
@@ -103,6 +106,9 @@ schema:
   vision_mqtt_base_topic: str
   vision_mqtt_subscribe_topics:
     - str
+  vision_event_finalization_enabled: bool
+  vision_event_finalization_delay_seconds: float
+  vision_event_finalization_max_pending: int
   vision_notifications_enabled: bool
   vision_notification_services:
     - str
