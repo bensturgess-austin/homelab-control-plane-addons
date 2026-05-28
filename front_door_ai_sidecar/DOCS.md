@@ -79,6 +79,8 @@ Known resident walk-ups remain suppressed by default. Delivery alerts still rout
 
 Version `0.1.11` buffers front-door MQTT event/review updates for `vision_event_finalization_delay_seconds` before analysis. The default delay is `10` seconds. This lets the sidecar merge Frigate tracked-object events and review updates into one finalized event, dedupe by tracked Frigate event id, and send at most one phone notification per physical front-door event.
 
+Version `0.1.12` disables AWS Rekognition identity fallback by default. Existing `hybrid` configurations continue to run the local event memory, MQTT state, notifications, and gated OpenAI summaries, but AWS CompareFaces is skipped unless `vision_aws_identity_enabled: true` is explicitly enabled.
+
 Known resident events are dashboard-only in normal operation. Use `vision_commissioning_notifications_enabled: true` only for deliberate walk tests. `vision_notify_known_residents` is retained for config compatibility, but normal live notifications suppress confident resident events until a better resident-alert use case is defined.
 
 ## Updating From Repo Changes
