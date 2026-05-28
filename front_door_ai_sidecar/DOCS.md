@@ -79,28 +79,57 @@ Known resident walk-ups remain suppressed by default. Delivery alerts still rout
 
 Version `0.1.11` buffers front-door MQTT event/review updates for `vision_event_finalization_delay_seconds` before analysis. The default delay is `10` seconds. This lets the sidecar merge Frigate tracked-object events and review updates into one finalized event, dedupe by tracked Frigate event id, and send at most one phone notification per physical front-door event.
 
-Version `0.1.12` disables AWS Rekognition identity fallback by default. Existing `hybrid` configurations continue to run the local event memory, MQTT state, notifications, and gated OpenAI summaries, but AWS CompareFaces is skipped unless `vision_aws_identity_enabled: true` is explicitly enabled.
+Version `0.1.12` disables AWS Rekognition identity fallback by default. Existing `hybrid` configurations continue to run the local event memory, MQTT state, notifications, and gated OpenAI summaries, but AWS CompareFaces is skipped unless `vision_aws_identity_enabled: true` is explicitly enabled. This keeps the higher-cost/low-value biometric fallback out of the normal operational path while preserving it for deliberate future testing.
+
+Version `0.1.13` adds a real zero-cloud `local_only` operating mode and tightens OpenAI usage behind a value gate. `local_only` keeps local recognition/classification enrichment, event memory, digests, MQTT/Home Assistant state, and notification routing active without OpenAI or AWS calls.
+
+Recommended profiles:
+
+- Zero-cloud trial: set `vision_provider_mode: local_only` and `vision_dry_run_enabled: false`.
+- Tightly gated OpenAI: set `vision_provider_mode: hybrid`, `vision_dry_run_enabled: false`, `vision_aws_identity_enabled: false`, and leave `vision_openai_value_gate_enabled: true`.
+- Commissioning: temporarily set `vision_openai_commissioning_enabled: true` for a deliberate OpenAI/manual-test event, then disable it again.
+
+With the value gate enabled, OpenAI is used only for unknown/visitor context, after-hours unknown context, package/delivery evidence, medium/high local risk, or explicit commissioning/manual-test events. Known residents and generic low-value person events stay local/dashboard-only.
 
 Known resident events are dashboard-only in normal operation. Use `vision_commissioning_notifications_enabled: true` only for deliberate walk tests. `vision_notify_known_residents` is retained for config compatibility, but normal live notifications suppress confident resident events until a better resident-alert use case is defined.
 
 ## Updating From Repo Changes
 
-Home Assistant reads this add-on from this public metadata repo, not from the private source repo. A new version is available to Home Assistant only after:
+Home Assistant reads this add-on from the public metadata repo, not from the private source repo. A new version is available to Home Assistant only after:
 
-1. the private source repo has built and published the GHCR image tag
-2. this public add-on metadata repo has been updated to the same version
+1. the private repo has built and published the GHCR image tag
+2. the public add-on metadata repo has been updated to the same version
 
-Home Assistant does not watch the private source repo commit or tag directly, and restarting Home Assistant is not the update mechanism. It discovers updates from the public add-on metadata repo and then pulls the matching public GHCR image.
+Home Assistant does not watch the private repo commit or tag directly, and restarting Home Assistant is not the update mechanism. It discovers updates from the public add-on metadata repo and then pulls the matching public GHCR image. If the Web UI does not show the new version after a few minutes, refresh or force the `update.front_door_ai_sidecar_update` entity before debugging the image build.
 
 For every sidecar tweak:
 
-1. Push the private source repo and wait for GitHub Actions to publish `ghcr.io/bensturgess-austin/front-door-ai-sidecar:<version>`.
+1. Push the private `homelab-control-plane` repo and wait for GitHub Actions to publish `ghcr.io/bensturgess-austin/front-door-ai-sidecar:<version>`.
 2. Confirm the GHCR tag exists and the package is public.
-3. Push this public metadata repo with the same add-on `version`.
+3. Push the public `homelab-control-plane-addons` metadata repo with the same add-on `version`.
 4. Wait a few minutes for Home Assistant Supervisor to refresh the add-on repository.
-5. If the update does not appear, refresh or force the Home Assistant `update.front_door_ai_sidecar_update` entity with the target version.
+5. If the update does not appear, force the Home Assistant update entity with the target version.
 
-If Supervisor returns `500 Internal Server Error` during a forced update, check the update entity before retrying. The update has worked when `installed_version` and `latest_version` both show the target version.
+If Home Assistant keeps showing the previous version, force the update from the private repo using the Home Assistant API:
+
+```powershell
+. .\scripts\load_shared_homelab_credentials.ps1
+$headers = @{ Authorization = "Bearer $($env:HA_TOKEN)" }
+$targetVersion = "0.1.13" # replace with the new add-on version
+$body = @{
+  entity_id = "update.front_door_ai_sidecar_update"
+  version = $targetVersion
+  backup = $false
+} | ConvertTo-Json
+Invoke-RestMethod `
+  -Method Post `
+  -Uri ($env:HA_BASE_URL.TrimEnd("/") + "/api/services/update/install") `
+  -Headers $headers `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+If Supervisor returns a `500`, check `update.front_door_ai_sidecar_update` before retrying. The update has worked when `installed_version` and `latest_version` both show the target version.
 
 ## Cutover
 

@@ -1,5 +1,5 @@
 name: Front Door AI Sidecar
-version: "0.1.12"
+version: "0.1.13"
 slug: front_door_ai_sidecar
 description: Durable front-door hybrid AI sidecar for Home Assistant OS
 url: https://github.com/bensturgess-austin/homelab-control-plane-addons
@@ -24,6 +24,8 @@ options:
   vision_openai_image_detail: low
   vision_openai_max_frames_per_event: 1
   vision_openai_max_output_tokens: 200
+  vision_openai_value_gate_enabled: true
+  vision_openai_commissioning_enabled: false
   vision_openai_timeout_seconds: 30
   vision_frame_snapshot_retry_attempts: 3
   vision_frame_snapshot_retry_backoff_seconds: 1.0
@@ -85,7 +87,7 @@ options:
   event_intelligence_ollama_base_url: ""
   event_intelligence_ollama_model: gemma3:12b
 schema:
-  vision_provider_mode: list(dry_run|openai_summary|aws_identity_fallback|hybrid)
+  vision_provider_mode: list(dry_run|local_only|openai_summary|aws_identity_fallback|hybrid)
   vision_dry_run_enabled: bool
   vision_enabled_cameras:
     - str
@@ -94,6 +96,8 @@ schema:
   vision_openai_image_detail: list(low|high|auto)
   vision_openai_max_frames_per_event: int
   vision_openai_max_output_tokens: int
+  vision_openai_value_gate_enabled: bool
+  vision_openai_commissioning_enabled: bool
   vision_openai_timeout_seconds: int
   vision_frame_snapshot_retry_attempts: int
   vision_frame_snapshot_retry_backoff_seconds: float
