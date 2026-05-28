@@ -1,136 +1,76 @@
 # Front Door AI Sidecar
 
-This add-on runs the governed front-door hybrid AI sidecar under Home Assistant OS.
+Front Door AI Sidecar is a Home Assistant OS add-on that listens to Frigate MQTT events, enriches front-door activity, publishes retained MQTT/Home Assistant state, and can send informational mobile notifications.
 
-It subscribes to Frigate MQTT events, processes only configured cameras, publishes retained MQTT/Home Assistant state, and can send informational Home Assistant mobile notifications. It does not publish command topics and does not operate locks, sirens, relays, lights, or security state.
+The add-on is observe-only. It does not publish command topics and does not control locks, lights, sirens, relays, alarm state, or other Home Assistant actions beyond optional mobile notifications.
 
-## Runtime Data
+## Required Configuration
 
-- `/data/homelab-control-plane.toml`: generated runtime config
-- `/data/telemetry.sqlite3`: automation telemetry journal
-- `/data/vision_cloud_calls.jsonl`: local cloud-call ledger
-- `/data/household_event_intelligence.sqlite3`: structured event-memory store, without raw images or video
-- `/share/front_door_ai/enrolled_household/`: default read-only location for enrolled resident reference images and manifest
+Configure these values before enabling live operation:
 
-## First Start
+- `vision_provider_mode`: start with `local_only` for zero-cloud operation, or `hybrid` for local signals plus gated OpenAI.
+- `vision_dry_run_enabled`: set to `false` for real local processing.
+- `vision_frigate_base_url`: Frigate HTTP URL, for example `http://<frigate-host>:5000`.
+- `vision_mqtt_enabled`: set to `true` when MQTT publishing/subscription is configured.
+- `vision_mqtt_broker_host`: MQTT broker host or IP.
+- `vision_mqtt_username` / `vision_mqtt_password`: MQTT credentials if required.
+- `vision_notification_services`: optional allowlisted Home Assistant notify services.
+- `vision_notification_allowed_services`: must include every notify service the add-on is allowed to call.
 
-1. Install the add-on with `vision_dry_run_enabled: true`.
-2. Configure MQTT broker details and `vision_frigate_base_url`.
-3. Start the add-on and confirm the log shows subscriptions to `frigate/reviews` and `frigate/events`.
-4. Add OpenAI/AWS keys only when ready to switch to `vision_provider_mode: hybrid`.
-5. Enable notifications only after dry-run MQTT state is confirmed.
+Provider keys are optional and should be entered only if you deliberately enable those providers:
 
-## Commissioning Notifications
+- `openai_api_key`: required for `openai_summary` or gated `hybrid` OpenAI calls.
+- `aws_access_key_id`, `aws_secret_access_key`, and `vision_aws_region`: required only if AWS identity fallback is explicitly enabled.
 
-Use `vision_commissioning_notifications_enabled: true` only while proving mobile notification delivery. Commissioning notifications are clearly labelled and should be turned off after a successful walk test.
+Reference images, if used, should live outside git under the configured `vision_identity_enrollment_manifest_path`.
 
-Leave `vision_notify_delivery_always: true` enabled for normal operation so delivery/package events can notify even when one provider returns a partial or skipped result. Leave `vision_notify_known_residents: false` unless resident walk-up notifications are explicitly desired.
+## Operating Profiles
 
-## Local Frigate Signals
+**Zero-cloud trial**
 
-Version `0.1.3` enriches front-door events from fresh Home Assistant state for local face recognition and person classification. The default freshness window is `vision_local_signal_freshness_seconds: 120`.
-
-Fresh `Resident`, `Visitor`, and `Delivery` classifications can help summary/notification routing when Frigate event zone fields are sparse. AWS identity fallback remains stricter and still requires the configured identity zone or ROI gate.
-
-## Frame Resolution
-
-Version `0.1.4` resolves OpenAI images from Frigate tracked-object event ids rather than assuming every MQTT review id is directly fetchable as an event snapshot. Review messages use their detection/object ids where available; event messages can still use the event-shaped message id.
-
-Snapshot fetches retry short-lived `404`, `409`, timeout, and invalid-image responses using `vision_frame_snapshot_retry_attempts` and `vision_frame_snapshot_retry_backoff_seconds`. The add-on publishes frame-resolution diagnostics without image bytes.
-
-Manual read-only smoke test from the private repo:
-
-```powershell
-.\scripts\test_front_door_frame_resolution.ps1 -EventId "<frigate-event-id>"
+```yaml
+vision_provider_mode: local_only
+vision_dry_run_enabled: false
+vision_aws_identity_enabled: false
+vision_openai_value_gate_enabled: true
 ```
 
-## Household Event Intelligence
+This keeps event memory, digests, MQTT state, dashboard entities, local recognition/classification enrichment, and notification routing active without OpenAI or AWS calls.
 
-Version `0.1.5` adds Household Event Intelligence: a durable semantic layer over processed Frigate events, local face/classification signals, OpenAI summaries, AWS identity fallback status, and notification outcomes. It stores structured event facts in SQLite under `/data`; it does not store raw video, image bytes, provider request bodies, or secrets.
+**Tightly gated OpenAI**
 
-The add-on publishes retained MQTT/Home Assistant state for `last_12h_summary`, `today_delivery_status`, `unknown_visitor_count`, `last_unknown_event`, and `event_memory_status`.
-
-The default digest is deterministic and local. Optional Ollama narrative summaries are disabled by default with `event_intelligence_llm_enabled: false`; if enabled, only structured event facts are sent to Ollama.
-
-## Notification Detail View
-
-Version `0.1.6` keeps mobile notifications short and adds a Home Assistant deep link so tapping an alert opens the front-door AI dashboard. The defaults are:
-
-- `vision_notification_click_url: /front-door-ai`
-- `vision_notification_message_max_chars: 160`
-
-Use the dashboard and daily digest examples in the private repo under `configs/integrations/` as manual Home Assistant review/apply artifacts. Notifications remain informational only and include no action buttons.
-
-## Frigate Backfill And Snapshot Candidates
-
-Version `0.1.7` backfills the event-memory store from recent Frigate tracked-object events on add-on startup. The default backfill is memory-only for the last 12 hours: it updates dashboard digest entities, but it does not call OpenAI, AWS, or Home Assistant notification services for historical events.
-
-The sidecar treats Frigate review ids and tracked-object event ids separately. Review messages are metadata unless they include detection/object ids; snapshot frames are resolved from actual Frigate event ids such as `frigate://front_door/<event-id>/snapshot.jpg`.
-
-Frigate `box` values are normalized from `[x, y, width, height]` into the sidecar contract shape `[left, top, right, bottom]` before ROI gates run. The summary ROI remains less strict than the AWS identity ROI.
-
-## Notification Quality And Signal Hygiene
-
-Version `0.1.10` keeps phone notifications focused on useful household alerts. Expected provider diagnostics such as `aws:no_face`, location/ROI skips, frame-resolution skips, and local-only backfill are kept in dashboard/log diagnostics rather than rendered as `partial result` phone messages or routine digest provider failures.
-
-Known resident walk-ups remain suppressed by default. Delivery alerts still route when there is stronger package/OpenAI evidence, but a local `Delivery` classification with a confident resident identity does not phone-alert by itself.
-
-## Event Finalization
-
-Version `0.1.11` buffers front-door MQTT event/review updates for `vision_event_finalization_delay_seconds` before analysis. The default delay is `10` seconds. This lets the sidecar merge Frigate tracked-object events and review updates into one finalized event, dedupe by tracked Frigate event id, and send at most one phone notification per physical front-door event.
-
-Version `0.1.12` disables AWS Rekognition identity fallback by default. Existing `hybrid` configurations continue to run the local event memory, MQTT state, notifications, and gated OpenAI summaries, but AWS CompareFaces is skipped unless `vision_aws_identity_enabled: true` is explicitly enabled. This keeps the higher-cost/low-value biometric fallback out of the normal operational path while preserving it for deliberate future testing.
-
-Version `0.1.13` adds a real zero-cloud `local_only` operating mode and tightens OpenAI usage behind a value gate. `local_only` keeps local recognition/classification enrichment, event memory, digests, MQTT/Home Assistant state, and notification routing active without OpenAI or AWS calls.
-
-Recommended profiles:
-
-- Zero-cloud trial: set `vision_provider_mode: local_only` and `vision_dry_run_enabled: false`.
-- Tightly gated OpenAI: set `vision_provider_mode: hybrid`, `vision_dry_run_enabled: false`, `vision_aws_identity_enabled: false`, and leave `vision_openai_value_gate_enabled: true`.
-- Commissioning: temporarily set `vision_openai_commissioning_enabled: true` for a deliberate OpenAI/manual-test event, then disable it again.
-
-With the value gate enabled, OpenAI is used only for unknown/visitor context, after-hours unknown context, package/delivery evidence, medium/high local risk, or explicit commissioning/manual-test events. Known residents and generic low-value person events stay local/dashboard-only.
-
-Known resident events are dashboard-only in normal operation. Use `vision_commissioning_notifications_enabled: true` only for deliberate walk tests. `vision_notify_known_residents` is retained for config compatibility, but normal live notifications suppress confident resident events until a better resident-alert use case is defined.
-
-## Updating From Repo Changes
-
-Home Assistant reads this add-on from the public metadata repo, not from the private source repo. A new version is available to Home Assistant only after:
-
-1. the private repo has built and published the GHCR image tag
-2. the public add-on metadata repo has been updated to the same version
-
-Home Assistant does not watch the private repo commit or tag directly, and restarting Home Assistant is not the update mechanism. It discovers updates from the public add-on metadata repo and then pulls the matching public GHCR image. If the Web UI does not show the new version after a few minutes, refresh or force the `update.front_door_ai_sidecar_update` entity before debugging the image build.
-
-For every sidecar tweak:
-
-1. Push the private `homelab-control-plane` repo and wait for GitHub Actions to publish `ghcr.io/bensturgess-austin/front-door-ai-sidecar:<version>`.
-2. Confirm the GHCR tag exists and the package is public.
-3. Push the public `homelab-control-plane-addons` metadata repo with the same add-on `version`.
-4. Wait a few minutes for Home Assistant Supervisor to refresh the add-on repository.
-5. If the update does not appear, force the Home Assistant update entity with the target version.
-
-If Home Assistant keeps showing the previous version, force the update from the private repo using the Home Assistant API:
-
-```powershell
-. .\scripts\load_shared_homelab_credentials.ps1
-$headers = @{ Authorization = "Bearer $($env:HA_TOKEN)" }
-$targetVersion = "0.1.13" # replace with the new add-on version
-$body = @{
-  entity_id = "update.front_door_ai_sidecar_update"
-  version = $targetVersion
-  backup = $false
-} | ConvertTo-Json
-Invoke-RestMethod `
-  -Method Post `
-  -Uri ($env:HA_BASE_URL.TrimEnd("/") + "/api/services/update/install") `
-  -Headers $headers `
-  -ContentType "application/json" `
-  -Body $body
+```yaml
+vision_provider_mode: hybrid
+vision_dry_run_enabled: false
+vision_aws_identity_enabled: false
+vision_openai_value_gate_enabled: true
 ```
 
-If Supervisor returns a `500`, check `update.front_door_ai_sidecar_update` before retrying. The update has worked when `installed_version` and `latest_version` both show the target version.
+OpenAI is used only when the value gate passes, such as unknown visitor, after-hours unknown visitor, delivery/package evidence, medium/high risk, or explicit commissioning.
 
-## Cutover
+**Commissioning**
 
-Run this add-on in parallel with the `newton` process first. Stop the `newton` background sidecar only after the add-on has processed a front-door event and Home Assistant mobile notification delivery is confirmed.
+Enable commissioning only for a short manual test window, then disable it again:
+
+```yaml
+vision_commissioning_notifications_enabled: true
+vision_openai_commissioning_enabled: true
+```
+
+## Dashboard Link
+
+Mobile notifications deep-link to the dashboard path configured by `vision_notification_click_url`, default `/front-door-ai`. Create or import a Home Assistant dashboard at that path if you want notification taps to open a readable detail view.
+
+## Updating
+
+The add-on uses the public image:
+
+```text
+ghcr.io/bensturgess-austin/front-door-ai-sidecar
+```
+
+Home Assistant preserves configured add-on options during normal version updates. After updating, restart the add-on and check the add-on log for MQTT subscription and event-processing messages.
+
+## Support Boundary
+
+This public add-on package contains only the install metadata and the runtime container image reference. Deployment-specific values, secrets, reference images, private automation notes, and local operational scripts are intentionally not included.

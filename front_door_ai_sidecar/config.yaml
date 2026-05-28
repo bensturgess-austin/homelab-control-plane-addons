@@ -1,5 +1,5 @@
 name: Front Door AI Sidecar
-version: "0.1.13"
+version: "0.1.14"
 slug: front_door_ai_sidecar
 description: Durable front-door hybrid AI sidecar for Home Assistant OS
 url: https://github.com/bensturgess-austin/homelab-control-plane-addons
@@ -30,9 +30,9 @@ options:
   vision_frame_snapshot_retry_attempts: 3
   vision_frame_snapshot_retry_backoff_seconds: 1.0
   openai_api_key: ""
-  vision_frigate_base_url: http://192.168.0.55:5000
-  vision_mqtt_enabled: true
-  vision_mqtt_broker_host: 192.168.20.92
+  vision_frigate_base_url: ""
+  vision_mqtt_enabled: false
+  vision_mqtt_broker_host: ""
   vision_mqtt_broker_port: 1883
   vision_mqtt_username: ""
   vision_mqtt_password: ""
@@ -44,14 +44,8 @@ options:
   vision_event_finalization_delay_seconds: 10.0
   vision_event_finalization_max_pending: 100
   vision_notifications_enabled: false
-  vision_notification_services:
-    - notify.mobile_app_bens_iphone
-    - notify.mobile_app_alinas_iphone
-    - notify.mobile_app_sophie_phone
-  vision_notification_allowed_services:
-    - notify.mobile_app_bens_iphone
-    - notify.mobile_app_alinas_iphone
-    - notify.mobile_app_sophie_phone
+  vision_notification_services: []
+  vision_notification_allowed_services: []
   vision_notification_routing_mode: severity
   vision_notification_click_url: /front-door-ai
   vision_notification_message_max_chars: 160
@@ -59,7 +53,7 @@ options:
   vision_notify_known_residents: false
   vision_notify_delivery_always: true
   vision_aws_identity_enabled: false
-  vision_aws_region: ap-southeast-2
+  vision_aws_region: ""
   aws_access_key_id: ""
   aws_secret_access_key: ""
   vision_aws_possible_match_threshold: 0.95
@@ -67,11 +61,10 @@ options:
   vision_aws_max_reference_images_per_person: 2
   vision_aws_max_comparisons_per_event: 12
   vision_identity_enrollment_manifest_path: /share/front_door_ai/enrolled_household/manifest.json
-  vision_identity_required_zones:
-    - frontdoor_detector
-  vision_identity_roi_polygon: "-0.001,0.983,0.006,0.572,0.386,0.401,0.88,0.84,0.827,0.987"
+  vision_identity_required_zones: []
+  vision_identity_roi_polygon: "0,0,1,0,1,1,0,1"
   vision_identity_min_roi_overlap: 0.30
-  vision_front_door_roi_polygon: "-0.001,0.983,0.006,0.572,0.386,0.401,0.88,0.84,0.827,0.987"
+  vision_front_door_roi_polygon: "0,0,1,0,1,1,0,1"
   vision_front_door_min_roi_overlap: 0.20
   vision_local_signal_freshness_seconds: 120
   event_intelligence_enabled: true
@@ -85,7 +78,7 @@ options:
   event_intelligence_backfill_limit: 200
   event_intelligence_llm_enabled: false
   event_intelligence_ollama_base_url: ""
-  event_intelligence_ollama_model: gemma3:12b
+  event_intelligence_ollama_model: ""
 schema:
   vision_provider_mode: list(dry_run|local_only|openai_summary|aws_identity_fallback|hybrid)
   vision_dry_run_enabled: bool
